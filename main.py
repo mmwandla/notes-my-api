@@ -92,15 +92,12 @@ def update_note(user_id, note_id):
 
 
 @app.route('/api/notes/<user_id>/<note_id>', methods=['DELETE'])
-def delete_note(note_id):
-    user_id = request.args.get('userId')
-    if user_id:
-        note_ref = db.reference(f'users/{user_id}/notes/{note_id}')
-        if note_ref.get():
-            note_ref.delete()
-            return '', 204
-        return jsonify({"error": "Note not found"}), 404
-    return jsonify({"error": "userId parameter is required"}), 400
+def delete_note(user_id, note_id):
+    note_ref = db.reference(f'users/{user_id}/notes/{note_id}')
+    if note_ref.get() is not None:
+        note_ref.delete()
+        return '', 204  # Successfully deleted
+    return jsonify({"error": "Note not found"}), 404
 
 
 if __name__ == '__main__':
