@@ -78,21 +78,41 @@ def create_note():
 @app.route('/api/notes/<user_id>/<note_id>', methods=['PUT'])
 def update_note(user_id, note_id):
     data = request.json
+
     if not user_id:
         return jsonify({"error": "userId is required"}), 400
 
     note_ref = db.reference(f'users/{user_id}/notes/{note_id}')
     note = note_ref.get()
-    if note:
-        note_ref.update({
-            'title': data.get('title', note['title']),
-            'content': data.get('content', note['content']),
-            'reminderDate': data.get('reminderDate', note.get('reminderDate', None)),
-            'reminderTime': data.get('reminderTime', note.get('reminderTime', None)),
-            'updatedAt': datetime.utcnow().isoformat()
-        })
-        return jsonify({**note, 'id': note_id})
-    return jsonify({"error": "Note not found"}), 404
+
+    if not note:
+        return jsonify({"error": "Note not found"}), 404
+
+    # Build the updated data dictionary
+    update_data = {
+        'title': data.get('title', note['title']),
+        'content': data.get('content', note['content']),
+        'updatedAt': datetime.utcnow().isoformat()
+    }
+
+    # Handle the reminder fields explicitly
+    if 'reminderDate' in data:
+        update_data['reminderDate'] = data['reminderDate']
+    else:
+        update_data['reminderDate'] = note.get('reminderDate')  # Keep existing value
+
+    if 'reminderTime' in data:
+        update_data['reminderTime'] = data['reminderTime']
+    else:
+        update_data['reminderTime'] = note.get('reminderTime')  # Keep existing value
+
+    # Update the note in the database
+    note_ref.update(update_data)
+
+    # Return the updated note
+    updated_note = note_ref.get()
+    updated_note['id'] = note_id
+    return jsonify(updated_note)
 
 
 @app.route('/api/notes/<user_id>/<note_id>', methods=['DELETE'])
