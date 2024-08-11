@@ -22,10 +22,9 @@ firebase_admin.initialize_app(cred, {
 })
 
 
-# Helper function to convert a note from Firebase format to Python dict
-def note_to_dict(note):
-    note_dict = note.val()
-    note_dict['id'] = note.key
+def note_to_dict(note, note_id):
+    note_dict = note
+    note_dict['id'] = note_id
     return note_dict
 
 
@@ -33,27 +32,33 @@ def note_to_dict(note):
 def get_notes():
     user_id = request.args.get('userId')
     if user_id:
-        notes_ref = db.reference('notes')
-        notes = notes_ref.order_by_child('userId').equal_to(user_id).get()
-        return jsonify([note_to_dict(note) for note in notes.items()]) if notes else jsonify([])
+        notes_ref = db.reference(f'users/{user_id}/notes')
+        notes = notes_ref.get()
+        return jsonify([note_to_dict(note, note_id) for note_id, note in notes.items()]) if notes else jsonify([])
     return jsonify({"error": "userId parameter is required"}), 400
 
 
-@app.route('/api/notes/<id>', methods=['GET'])
-def get_note(id):
-    note_ref = db.reference(f'notes/{id}')
-    note = note_ref.get()
-    if note:
-        note['id'] = id
-        return jsonify(note)
-    return jsonify({"error": "Note not found"}), 404
+@app.route('/api/notes/<note_id>', methods=['GET'])
+def get_note(note_id):
+    user_id = request.args.get('userId')
+    if user_id:
+        note_ref = db.reference(f'users/{user_id}/notes/{note_id}')
+        note = note_ref.get()
+        if note:
+            note['id'] = note_id
+            return jsonify(note)
+        return jsonify({"error": "Note not found"}), 404
+    return jsonify({"error": "userId parameter is required"}), 400
 
 
 @app.route('/api/notes', methods=['POST'])
 def create_note():
     data = request.json
-    new_note_ref = db.reference('notes').push({
-        'userId': data.get('userId'),
+    user_id = data.get('userId')
+    if not user_id:
+        return jsonify({"error": "userId is required"}), 400
+
+    new_note_ref = db.reference(f'users/{user_id}/notes').push({
         'title': data.get('title'),
         'content': data.get('content'),
         'createdAt': datetime.utcnow().isoformat(),
@@ -62,10 +67,14 @@ def create_note():
     return jsonify({**data, 'id': new_note_ref.key}), 201
 
 
-@app.route('/api/notes/<id>', methods=['PUT'])
-def update_note(id):
+@app.route('/api/notes/<note_id>', methods=['PUT'])
+def update_note(note_id):
     data = request.json
-    note_ref = db.reference(f'notes/{id}')
+    user_id = data.get('userId')
+    if not user_id:
+        return jsonify({"error": "userId is required"}), 400
+
+    note_ref = db.reference(f'users/{user_id}/notes/{note_id}')
     note = note_ref.get()
     if note:
         note_ref.update({
@@ -73,17 +82,20 @@ def update_note(id):
             'content': data.get('content', note['content']),
             'updatedAt': datetime.utcnow().isoformat()
         })
-        return jsonify({**note, 'id': id})
+        return jsonify({**note, 'id': note_id})
     return jsonify({"error": "Note not found"}), 404
 
 
-@app.route('/api/notes/<id>', methods=['DELETE'])
-def delete_note(id):
-    note_ref = db.reference(f'notes/{id}')
-    if note_ref.get():
-        note_ref.delete()
-        return '', 204
-    return jsonify({"error": "Note not found"}), 404
+@app.route('/api/notes/<note_id>', methods=['DELETE'])
+def delete_note(note_id):
+    user_id = request.args.get('userId')
+    if user_id:
+        note_ref = db.reference(f'users/{user_id}/notes/{note_id}')
+        if note_ref.get():
+            note_ref.delete()
+            return '', 204
+        return jsonify({"error": "Note not found"}), 404
+    return jsonify({"error": "userId parameter is required"}), 400
 
 
 if __name__ == '__main__':
