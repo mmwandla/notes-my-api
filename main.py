@@ -64,6 +64,8 @@ def create_note():
         'userId': user_id,
         'title': data.get('title'),
         'content': data.get('content'),
+        'reminderDate': data.get('reminderDate'),
+        'reminderTime': data.get('reminderTime'),
         'createdAt': datetime.utcnow().isoformat(),
         'updatedAt': datetime.utcnow().isoformat()
     }
@@ -85,6 +87,8 @@ def update_note(user_id, note_id):
         note_ref.update({
             'title': data.get('title', note['title']),
             'content': data.get('content', note['content']),
+            'reminderDate': data.get('reminderDate', note.get('reminderDate', None)),
+            'reminderTime': data.get('reminderTime', note.get('reminderTime', None)),
             'updatedAt': datetime.utcnow().isoformat()
         })
         return jsonify({**note, 'id': note_id})
@@ -96,7 +100,7 @@ def delete_note(user_id, note_id):
     note_ref = db.reference(f'users/{user_id}/notes/{note_id}')
     if note_ref.get() is not None:
         note_ref.delete()
-        return '', 204  # Successfully deleted
+        return '', 204
     return jsonify({"error": "Note not found"}), 404
 
 
