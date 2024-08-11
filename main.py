@@ -28,7 +28,6 @@ def note_to_dict(note, note_id):
     return note_dict
 
 
-# GET /api/notes - Fetch all notes for a user
 @app.route('/api/notes', methods=['GET'])
 def get_notes():
     user_id = request.args.get('userId')
@@ -41,7 +40,6 @@ def get_notes():
     return jsonify({"error": "userId parameter is required"}), 400
 
 
-# GET /api/notes/<note_id> - Fetch a specific note by ID
 @app.route('/api/notes/<note_id>', methods=['GET'])
 def get_note(note_id):
     user_id = request.args.get('userId')
@@ -55,7 +53,6 @@ def get_note(note_id):
     return jsonify({"error": "userId parameter is required"}), 400
 
 
-# POST /api/notes - Create a new note
 @app.route('/api/notes', methods=['POST'])
 def create_note():
     data = request.json
@@ -63,23 +60,19 @@ def create_note():
     if not user_id:
         return jsonify({"error": "userId is required"}), 400
 
-    new_note_ref = db.reference(f'users/{user_id}/notes').push({
-        'title': data.get('title'),
-        'content': data.get('content'),
-        'createdAt': datetime.utcnow().isoformat(),
-        'updatedAt': datetime.utcnow().isoformat()
-    })
-    note = {
-        'id': new_note_ref.key,
+    note_data = {
+        'userId': user_id,
         'title': data.get('title'),
         'content': data.get('content'),
         'createdAt': datetime.utcnow().isoformat(),
         'updatedAt': datetime.utcnow().isoformat()
     }
-    return jsonify(note), 201
+
+    new_note_ref = db.reference(f'users/{user_id}/notes').push(note_data)
+    note_data['id'] = new_note_ref.key
+    return jsonify(note_data), 201
 
 
-# PUT /api/notes/<note_id> - Update an existing note
 @app.route('/api/notes/<note_id>', methods=['PUT'])
 def update_note(note_id):
     data = request.json
@@ -102,7 +95,6 @@ def update_note(note_id):
     return jsonify({"error": "Note not found"}), 404
 
 
-# DELETE /api/notes/<note_id> - Delete a note
 @app.route('/api/notes/<note_id>', methods=['DELETE'])
 def delete_note(note_id):
     user_id = request.args.get('userId')
