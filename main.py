@@ -95,19 +95,26 @@ def update_note(user_id, note_id):
         'updatedAt': datetime.utcnow().isoformat()
     }
 
-    # Handle the reminder fields explicitly
-    if 'reminderDate' in data:
+    # Check if reminderDate is explicitly set to null
+    if data.get('reminderDate') is None:
+        update_data['reminderDate'] = None
+    elif 'reminderDate' in data:
         update_data['reminderDate'] = data['reminderDate']
-    else:
-        update_data['reminderDate'] = note.get('reminderDate')  # Keep existing value
 
-    if 'reminderTime' in data:
+    # Check if reminderTime is explicitly set to null
+    if data.get('reminderTime') is None:
+        update_data['reminderTime'] = None
+    elif 'reminderTime' in data:
         update_data['reminderTime'] = data['reminderTime']
-    else:
-        update_data['reminderTime'] = note.get('reminderTime')  # Keep existing value
 
-    # Update the note in the database
+    # Perform the update in Firebase
     note_ref.update(update_data)
+
+    # Explicitly delete the fields if they are set to None
+    if 'reminderDate' in update_data and update_data['reminderDate'] is None:
+        note_ref.child('reminderDate').delete()
+    if 'reminderTime' in update_data and update_data['reminderTime'] is None:
+        note_ref.child('reminderTime').delete()
 
     # Return the updated note
     updated_note = note_ref.get()
