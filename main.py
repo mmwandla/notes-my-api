@@ -91,8 +91,7 @@ def update_note(user_id, note_id):
     return jsonify({"error": "Note not found"}), 404
 
 
-
-@app.route('/api/notes/<note_id>', methods=['DELETE'])
+@app.route('/api/notes/<user_id>/<note_id>', methods=['DELETE'])
 def delete_note(note_id):
     user_id = request.args.get('userId')
     if user_id:
