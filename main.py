@@ -73,26 +73,23 @@ def create_note():
     return jsonify(note_data), 201
 
 
-@app.route('/api/notes/<note_id>', methods=['PUT'])
-def update_note(note_id):
+@app.route('/api/notes/<user_id>/<note_id>', methods=['PUT'])
+def update_note(user_id, note_id):
     data = request.json
-    user_id = data.get('userId')
     if not user_id:
         return jsonify({"error": "userId is required"}), 400
 
     note_ref = db.reference(f'users/{user_id}/notes/{note_id}')
     note = note_ref.get()
     if note:
-        updated_note = {
+        note_ref.update({
             'title': data.get('title', note['title']),
             'content': data.get('content', note['content']),
             'updatedAt': datetime.utcnow().isoformat()
-        }
-        note_ref.update(updated_note)
-        updated_note['id'] = note_id
-        updated_note['createdAt'] = note['createdAt']  # Keep original createdAt timestamp
-        return jsonify(updated_note)
+        })
+        return jsonify({**note, 'id': note_id})
     return jsonify({"error": "Note not found"}), 404
+
 
 
 @app.route('/api/notes/<note_id>', methods=['DELETE'])
