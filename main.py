@@ -15,10 +15,10 @@ if firebase_service_account_key:
 else:
     raise ValueError("FIREBASE_SERVICE_ACCOUNT_KEY environment variable not set")
 
-# Initialize Firebase Admin SDK
+# Initialize Firebase Admin SDK with a manually set database URL
 cred = credentials.Certificate(service_account_info)
 firebase_admin.initialize_app(cred, {
-    'databaseURL': os.environ.get('FIREBASE_DATABASE_URL')  # Get the database URL from the environment variable
+    'databaseURL': 'https://notes-app777-default-rtdb.firebaseio.com'  # Manually set database URL
 })
 
 
