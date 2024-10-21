@@ -66,6 +66,7 @@ def create_note():
         'content': data.get('content'),
         'reminderDate': data.get('reminderDate'),
         'reminderTime': data.get('reminderTime'),
+        'isFavourite': data.get('isFavourite', False),
         'createdAt': datetime.utcnow().isoformat(),
         'updatedAt': datetime.utcnow().isoformat()
     }
@@ -88,10 +89,10 @@ def update_note(user_id, note_id):
     if not note:
         return jsonify({"error": "Note not found"}), 404
 
-    # Build the updated data dictionary
     update_data = {
         'title': data.get('title', note['title']),
         'content': data.get('content', note['content']),
+        'isFavourite': data.get('isFavourite', note.get('isFavourite', False)),
         'updatedAt': datetime.utcnow().isoformat()
     }
 
