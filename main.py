@@ -5,8 +5,21 @@ from datetime import datetime
 import os
 import json
 import base64
+from prometheus_flask_exporter import PrometheusMetrics
 
 app = Flask(__name__)
+
+# Initialize PrometheusMetrics
+metrics = PrometheusMetrics(app)
+
+# Expose default Flask metrics
+metrics.info('app_info', 'Application info', version='1.0.0')
+
+# Add a metric for HTTP requests
+metrics.counter(
+    'http_requests_total', 'Total number of HTTP requests',
+    labels={'method': lambda: request.method, 'endpoint': lambda: request.endpoint}
+)
 
 # Decode the Firebase service account key from the environment variable
 firebase_service_account_key = os.environ.get('FIREBASE_SERVICE_ACCOUNT_KEY')
